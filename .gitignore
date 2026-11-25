@@ -1,0 +1,143 @@
+# =========================
+# Agent OS local/private data
+# =========================
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Local databases (incl. SQLite WAL sidecars: .db-shm / .db-wal)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+backend/*.sqlite
+backend/*.sqlite3
+
+# User/project memory - private local state.
+# Ignore everything inside these folders, but keep the committed example
+# templates + README explainers (and the public, non-private SOUL.md) so the
+# repo documents the layout without leaking personal projects or memory.
+memory/*
+!memory/README.md
+!memory/SOUL.md
+!memory/USER.example.md
+!memory/WORKSTYLE.example.md
+!memory/MEMORY.example.md
+
+projects/*
+!projects/README.md
+!projects/PROJECT.example.md
+!projects/STATUS.example.md
+!projects/DECISIONS.example.md
+!projects/RESEARCH.example.md
+!projects/LESSONS.example.md
+!projects/OPS.example.md
+
+# Execution workspaces - generated agent artifacts, logs, repo sandboxes.
+# Same treatment: real per-project workspaces stay private; the example
+# templates + README explainer are committed.
+execution_workspaces/*
+!execution_workspaces/README.md
+!execution_workspaces/AGENT.example.md
+!execution_workspaces/TASK.example.md
+
+# Chat attachments - user-uploaded files attached to chat messages.
+# Private local state, same as memory and workspaces.
+chat_uploads/
+
+# Phase 7 — Project Ops credential store (GitHub tokens, project + global).
+# Secrets must never be committed; the central accessor (backend/credentials.py)
+# is the only reader, and tokens never reach prompts/logs/memory/Git.
+credentials/
+
+# Runtime logs
+logs/
+*.log
+
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+ENV/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Node / Frontend
+# =========================
+
+node_modules/
+frontend/node_modules/
+
+dist/
+frontend/dist/
+
+.vite/
+frontend/.vite/
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# IDE / OS
+# =========================
+
+.vscode/
+.idea/
+
+# Claude Code local settings (per-machine, not shared)
+.claude/
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Build / temp
+# =========================
+
+tmp/
+temp/
+.cache/
+
+# Locally-installed external CLIs (supabase / stripe) — per-machine binaries
+# used by the sandboxed executors; large + platform-specific, never committed.
+.tools/
+
+# =========================
+# Demo video — scripts committed, media/artifacts are not
+# =========================
+# The reproducible pipeline (demo/record.py, demo/make_video.py, its fonts and
+# the README thumbnail) is committed; everything below is regenerated locally
+# from those scripts, so it stays out of the repo. The rendered demo lives on
+# YouTube, not in Git — never commit binary video output.
+# raw Playwright .webm beat recordings
+demo/raw/
+# FFmpeg segments + clips.json (build intermediates)
+demo/build/
+# label text files written by make_video.py
+demo/assets/labels/
+# generated demo video output
+demo/*.mp4

@@ -1,0 +1,4870 @@
+/* =====================================================================
+   Agent OS — design system ("night ops console")
+   UI polish pass: one token layer drives every color, font, radius and
+   shadow in the app. Class names are unchanged from the pre-polish CSS —
+   components rely on them — only the visual values moved to tokens.
+
+   Voice: graphite surfaces, one calm periwinkle-indigo working accent,
+   crimson reserved for danger, and a strict semantic status spectrum.
+   Signature: "telemetry labels" — every eyebrow / section label / badge
+   is tracked small-caps monospace; conversation stays humanist.
+   ===================================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+
+  /* type */
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system,
+    'Inter', 'Helvetica Neue', sans-serif;
+  --font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'SFMono-Regular',
+    'JetBrains Mono', Menlo, monospace;
+
+  /* canvas + surfaces */
+  --bg: #0f1217;
+  --bg-surface: #151a21;
+  --bg-input: #1d242e;
+  --bg-elev: rgba(255, 255, 255, 0.045);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --overlay: rgba(5, 8, 13, 0.58);
+
+  /* lines */
+  --border: #272f3a;
+  --border-strong: #3a4450;
+
+  /* ink */
+  --text: #d7dee8;
+  --text-muted: #8c96a5;
+  --text-strong: #f2f6fa;
+
+  /* working accent — calm periwinkle-indigo */
+  --accent: #8b97ff;
+  --accent-strong: #5b6ae8;
+  --accent-hover: #6c7af2;
+  --accent-soft: rgba(122, 135, 250, 0.14);
+  --accent-border: rgba(139, 151, 255, 0.5);
+
+  /* danger — the legacy crimson, demoted to its semantic role */
+  --danger: #f2555a;
+  --danger-strong: #d63c46;
+  --danger-hover: #c3363f;
+  --danger-soft: rgba(242, 85, 90, 0.1);
+  --danger-border: rgba(242, 85, 90, 0.45);
+  --danger-glow: rgba(242, 85, 90, 0.5);
+
+  /* status spectrum */
+  --ok: #4cc38a;
+  --ok-bg: rgba(76, 195, 138, 0.1);
+  --ok-bd: rgba(76, 195, 138, 0.38);
+  --warn: #e2b55f;
+  --warn-bg: rgba(226, 181, 95, 0.1);
+  --warn-bd: rgba(226, 181, 95, 0.38);
+  --warn-fill: #d9a441;
+  --warn-fill-text: #1c1508;
+  --run: #63a9f5;
+  --run-bg: rgba(99, 169, 245, 0.1);
+  --run-bd: rgba(99, 169, 245, 0.38);
+  --run-glow: rgba(99, 169, 245, 0.5);
+  --blocked: #ef9563;
+  --blocked-bg: rgba(239, 149, 99, 0.1);
+  --blocked-bd: rgba(239, 149, 99, 0.38);
+  --cancel: #a79fc0;
+  --cancel-bg: rgba(167, 159, 192, 0.1);
+  --cancel-bd: rgba(167, 159, 192, 0.38);
+
+  /* chat bubbles */
+  --msg-user: #1c2433;
+  --msg-assistant: #151a21;
+
+  /* strong/bold text inside rendered responses + subtle elevated surfaces */
+  --bg-elev-2: rgba(255, 255, 255, 0.07);
+
+  /* geometry + depth */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-3: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Task 07.2 — light theme. Applied when <html data-theme="light">. The
+   :root[data-theme=...] selector outranks plain :root, so these win whenever
+   the attribute is set; with no attribute the dark defaults above apply. */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f2f4f8;
+  --bg-surface: #ffffff;
+  --bg-input: #edf0f5;
+  --bg-elev: rgba(18, 26, 40, 0.045);
+  --bg-hover: rgba(18, 26, 40, 0.06);
+  --overlay: rgba(15, 23, 42, 0.4);
+
+  --border: #dbe0e9;
+  --border-strong: #c3cbd8;
+
+  --text: #222936;
+  --text-muted: #5e6878;
+  --text-strong: #0f1522;
+
+  --accent: #4655d4;
+  --accent-strong: #4a59dd;
+  --accent-hover: #3c4bd0;
+  --accent-soft: rgba(74, 89, 221, 0.1);
+  --accent-border: rgba(74, 89, 221, 0.42);
+
+  --danger: #d63640;
+  --danger-strong: #cf323c;
+  --danger-hover: #b92d36;
+  --danger-soft: rgba(214, 54, 64, 0.08);
+  --danger-border: rgba(214, 54, 64, 0.4);
+  --danger-glow: rgba(214, 54, 64, 0.4);
+
+  --ok: #188653;
+  --ok-bg: rgba(24, 134, 83, 0.09);
+  --ok-bd: rgba(24, 134, 83, 0.35);
+  --warn: #96690f;
+  --warn-bg: rgba(150, 105, 15, 0.09);
+  --warn-bd: rgba(150, 105, 15, 0.35);
+  --warn-fill: #b07b18;
+  --warn-fill-text: #ffffff;
+  --run: #1f6fd6;
+  --run-bg: rgba(31, 111, 214, 0.09);
+  --run-bd: rgba(31, 111, 214, 0.35);
+  --run-glow: rgba(31, 111, 214, 0.4);
+  --blocked: #b25a24;
+  --blocked-bg: rgba(178, 90, 36, 0.09);
+  --blocked-bd: rgba(178, 90, 36, 0.35);
+  --cancel: #6f6894;
+  --cancel-bg: rgba(111, 104, 148, 0.09);
+  --cancel-bd: rgba(111, 104, 148, 0.35);
+
+  --msg-user: #e7ebfa;
+  --msg-assistant: #ffffff;
+
+  --bg-elev-2: rgba(18, 26, 40, 0.07);
+
+  --shadow-1: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-2: 0 8px 28px rgba(15, 23, 42, 0.14);
+  --shadow-3: 0 20px 60px rgba(15, 23, 42, 0.2);
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: var(--font-ui);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+/* Visible keyboard focus everywhere; inputs with custom focus borders opt
+   out locally via their own outline rules. */
+:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
+}
+
+/* Themed thin scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: var(--r-pill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Telemetry labels — the shared small-caps mono voice for every eyebrow /
+   section label. Individual rules below only adjust size/spacing. */
+.sidebar h2,
+.chat-header-eyebrow,
+.chat-message-role,
+.run-detail-label,
+.run-detail-grid h4,
+.run-detail-result h4,
+.agent-section h5,
+.settings-section-title,
+.run-chat-wave-header {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr) 320px;
+  height: 100vh;
+  transition: grid-template-columns 0.24s var(--ease);
+}
+
+/* UI polish pass — collapsed left rail. The sidebar component stays mounted,
+   so expand/selection state survives the collapse. */
+.app-layout.sidebar-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr) 320px;
+}
+
+/* Sidebar shared */
+.sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 14px;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  margin-bottom: 10px;
+}
+
+/* Left sidebar chrome: nameplate + collapse control + scrollable body +
+   pinned Settings footer. (The right context panel keeps the base .sidebar
+   single-scroll layout.) */
+.sidebar.project-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sidebar-top {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 12px 10px 16px;
+  min-width: 236px;
+}
+
+.sidebar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-strong);
+  white-space: nowrap;
+}
+
+.sidebar-brand::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 2.5px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 0 8px var(--accent-soft);
+}
+
+.sidebar-collapse-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.sidebar-collapse-btn:hover {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 12px 12px;
+  min-width: 236px;
+}
+
+.sidebar-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 8px 10px;
+  min-width: 236px;
+}
+
+/* A clear, bordered gear button (not just a hover row). */
+.sidebar-settings-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease),
+    border-color 0.14s var(--ease);
+}
+
+.sidebar-settings-btn:hover {
+  background: var(--bg-elev-2);
+  border-color: var(--border-strong);
+  color: var(--text-strong);
+}
+
+/* Keyboard focus — visible ring on the sidebar's icon/footer controls. */
+.sidebar-settings-btn:focus-visible,
+.sidebar-rail-btn:focus-visible,
+.sidebar-collapse-btn:focus-visible,
+.sidebar-action-btn:focus-visible,
+.agents-btn:focus-visible,
+.global-memory-btn:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+}
+
+/* Collapsed rail */
+.sidebar.collapsed {
+  padding: 0;
+  overflow: hidden;
+}
+
+.sidebar-rail {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 0 12px;
+}
+
+.sidebar-rail-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.sidebar-rail-btn:hover {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+.sidebar-rail-divider {
+  width: 22px;
+  height: 1px;
+  background: var(--border);
+  margin: 5px 0;
+}
+
+.sidebar-rail-spacer {
+  flex: 1;
+}
+
+/* Project list */
+.project-list ul {
+  list-style: none;
+}
+
+.project-item {
+  margin-bottom: 2px;
+}
+
+.project-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-btn:hover {
+  background: var(--bg-elev);
+}
+
+.project-btn.active {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+.expand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.15s var(--ease);
+}
+
+.expand-icon.open {
+  transform: rotate(90deg);
+}
+
+/* Conversation list */
+.conv-list {
+  padding-left: 18px;
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+/* Public UI pass — the Conversations section lists the GENERAL workspace's
+   chats flat under the section header, so it drops the nesting indent. */
+.conv-list.conv-list-flat {
+  padding-left: 4px;
+}
+
+.conv-btn {
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 1px;
+}
+
+.conv-btn:hover {
+  background: var(--bg-elev);
+  color: var(--text);
+}
+
+.conv-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.conv-btn.new-conv {
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.conv-btn.new-conv:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Chat panel */
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.chat-header {
+  padding: 12px 24px 13px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-surface);
+}
+
+.chat-header h2 {
+  font-size: 15.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+/* Workspace eyebrow above the title (telemetry-label voice). */
+.chat-header-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+}
+
+.chat-header-eyebrow {
+  font-size: 9.5px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px max(24px, calc((100% - 920px) / 2)) 28px;
+}
+
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Empty states — an invitation to act, not a shrug. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 24px;
+}
+
+.empty-state-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-state-hint {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 360px;
+}
+
+.chat-message {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border-radius: var(--r-lg);
+  max-width: 80%;
+}
+
+.chat-message.user {
+  background: var(--msg-user);
+  margin-left: auto;
+  border-bottom-right-radius: var(--r-sm);
+}
+
+.chat-message.assistant {
+  background: var(--msg-assistant);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: var(--r-sm);
+  box-shadow: var(--shadow-1);
+}
+
+.chat-message-role {
+  font-size: 9.5px;
+  margin-bottom: 6px;
+}
+
+.chat-message-content {
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+/* Run-aware affordance — shown only on assistant bubbles that contain a
+   Coding Agent run id (e.g. @code placeholders). Opens RunDetailModal. */
+.chat-run-affordance-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+.chat-run-affordance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.chat-run-affordance::before {
+  content: "↗";
+  font-size: 12px;
+  line-height: 1;
+}
+
+.chat-run-affordance:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #fff;
+}
+
+/* Pending execution plan actions (Task 05.9.5) — confirmable Coding Agent
+   plan rendered under an assistant message. */
+.pending-execution-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.pending-confirm-btn,
+.pending-revise-btn,
+.pending-inspect-btn {
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease),
+    border-color 0.14s var(--ease);
+}
+
+.pending-confirm-btn {
+  background: var(--accent-strong);
+  color: #fff;
+  border: 1px solid var(--accent-strong);
+}
+
+.pending-confirm-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.pending-revise-btn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.pending-revise-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.pending-inspect-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.pending-inspect-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.pending-confirm-btn:disabled,
+.pending-revise-btn:disabled,
+.pending-inspect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pending-revising-hint {
+  margin-top: 10px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.pending-task-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Revise-mode banner above the chat input — tells the user the next send
+   will revise a pending plan, not create a new turn. */
+.revise-mode-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 20px;
+  background: var(--accent-soft);
+  border-top: 1px solid var(--accent-border);
+  font-size: 12px;
+  color: var(--text);
+}
+
+.revise-mode-banner strong {
+  color: var(--accent);
+}
+
+.revise-mode-cancel {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.revise-mode-cancel:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* Chat input */
+.chat-input {
+  display: flex;
+  padding: 14px 20px 16px;
+  border-top: 1px solid var(--border);
+  gap: 8px;
+  background: var(--bg-surface);
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.chat-input input:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.chat-input button {
+  padding: 10px 20px;
+  background: var(--accent-strong);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.chat-input button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* ---------- Task 07.0 — multi-modal composer ---------- */
+
+/* The composer is a flex row; align to the bottom so the growing textarea
+   pushes upward while the attach, mic, and Send controls stay anchored. */
+.chat-input.composer {
+  align-items: flex-end;
+}
+
+.composer-textarea {
+  flex: 1;
+  min-width: 0;
+  /* line-height 20 + 8+8 padding + 1+1 border = 38px, exactly matching the
+     attach / mic / model / send controls on a single line. */
+  padding: 8px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  min-height: 38px;
+  outline: none;
+  resize: none;
+  overflow-y: auto;
+  max-height: 200px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.composer-textarea:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.composer-textarea:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Icon buttons for attach + voice — override the generic
+   `.chat-input button` rule via higher specificity (`.composer …`). */
+.composer .composer-icon-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease),
+    border-color 0.14s var(--ease);
+}
+
+.composer .composer-attach-btn {
+  color: var(--text-muted);
+}
+
+.composer .composer-icon-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--bg-elev-2);
+}
+
+.composer .composer-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Recording state — pulsing ring on the mic button. */
+.composer .composer-voice-btn.recording {
+  color: #fff;
+  background: var(--danger-strong);
+  border-color: var(--danger-strong);
+  animation: composer-rec-pulse 1.3s ease-out infinite;
+}
+
+@keyframes composer-rec-pulse {
+  0% { box-shadow: 0 0 0 0 var(--danger-glow); }
+  70% { box-shadow: 0 0 0 7px rgba(0, 0, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+/* Send is a compact 38×38 arrow button, matching the icon-control baseline. */
+.composer .composer-send-btn {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-strong);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.composer .composer-send-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.composer .composer-send-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Provider Registry 2.0 — composer-side model picker (compact, opens UPWARD,
+   right-aligned over the input area) + per-model image-upload gating cues.
+   Public UI pass: the picker rides INSIDE the composer row (right side,
+   before Send) — the old full-width `.composer-modelbar` band is gone. */
+.chat-input.composer .model-picker {
+  flex-shrink: 0;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.model-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.model-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.14s var(--ease), color 0.14s var(--ease),
+    background 0.14s var(--ease);
+}
+
+.model-picker-trigger:hover:not(:disabled),
+.model-picker-trigger:focus:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-input);
+  border-color: var(--border);
+}
+
+.model-picker-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.model-picker-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-picker-cap {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.model-picker-cap.text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--bg-elev);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.model-picker-caret {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.model-picker-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 6px); /* opens upward, above the trigger */
+  z-index: 30;
+  min-width: 230px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+}
+
+.model-picker-menu li {
+  list-style: none;
+}
+
+.model-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 9px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-picker-option:hover {
+  background: var(--bg-input);
+}
+
+.model-picker-option.selected {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+.model-picker-option-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-picker-vision {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+
+.model-picker-vision.yes {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+.model-picker-vision.no {
+  color: var(--text-muted);
+}
+
+/* Scoped under `.chat-input.composer` so the picker's trigger + menu options
+   beat the generic `.chat-input button` accent rule now that the picker sits
+   inside the form — the same specificity trick as `.composer-icon-btn` and
+   the command-menu options. Without these, both render as solid accent
+   blocks with unreadable text. */
+.chat-input.composer .model-picker-trigger {
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chat-input.composer .model-picker-trigger:hover:not(:disabled),
+.chat-input.composer .model-picker-trigger:focus:not(:disabled) {
+  color: var(--text);
+  background: var(--bg-input);
+  border-color: var(--border);
+}
+
+.chat-input.composer .model-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 9px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.chat-input.composer .model-picker-option:hover {
+  background: var(--bg-input);
+}
+
+.chat-input.composer .model-picker-option.selected {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+/* Image-upload-disabled cues for a text-only model. */
+.composer .composer-attach-btn.no-image {
+  color: var(--text-muted);
+  opacity: 0.75;
+}
+
+.composer-image-blocked {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Tray above the composer: file chips, workspace toggle, inline errors. */
+.composer-tray {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 20px 0;
+  background: var(--bg-surface);
+}
+
+.composer-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.composer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 4px 6px 4px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+}
+
+.composer-chip-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.composer-chip-size {
+  color: var(--text-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.composer-chip-remove {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.composer-chip-remove:hover:not(:disabled) {
+  background: var(--danger-strong);
+  color: #fff;
+}
+
+.composer-chip-remove:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.composer-workspace-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  width: fit-content;
+}
+
+.composer-workspace-toggle input[type='checkbox'] {
+  cursor: pointer;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+
+.composer-upload-error,
+.composer-voice-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* Attachments rendered under a sent message bubble. */
+.chat-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chat-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 12px;
+}
+
+.chat-attachment-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.chat-attachment-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.chat-attachment-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.chat-attachment-scope {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+
+.chat-attachment-scope.chat {
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+}
+
+.chat-attachment-scope.workspace {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-bd);
+}
+
+/* Context panel */
+.context-panel {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+.context-project-name {
+  font-size: 14.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+  margin: -6px 0 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.context-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.context-files details {
+  margin-bottom: 6px;
+}
+
+.context-files summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.context-files summary:hover {
+  background: var(--bg-elev);
+  color: var(--text-strong);
+}
+
+.context-content {
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.context-read {
+  position: relative;
+}
+
+.btn-edit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 2px 10px;
+  font-size: 11px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.btn-edit:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.context-read:hover .btn-edit {
+  opacity: 1;
+}
+
+.context-editor textarea {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+}
+
+.context-editor-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.btn-save, .btn-cancel {
+  padding: 5px 14px;
+  font-size: 12.5px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.btn-save {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-cancel {
+  background: var(--bg-input);
+  color: var(--text-muted);
+}
+
+.btn-cancel:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Orchestration response styling */
+.orch-response h3.orch-h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-strong);
+  margin: 0 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.orch-response h4.orch-h3 {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 12px 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.orch-response li {
+  list-style: none;
+  padding-left: 12px;
+  position: relative;
+  margin-bottom: 2px;
+}
+
+.orch-response li::before {
+  content: "\2022";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+}
+
+.orch-response strong {
+  color: var(--text-strong);
+}
+
+.orch-response blockquote {
+  border-left: 3px solid var(--accent-border);
+  padding-left: 10px;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
+
+/* Thinking indicator */
+.chat-thinking {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.chat-input button:disabled,
+.chat-input input:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Sidebar header with action button */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.sidebar-header h2 {
+  margin-bottom: 0;
+}
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.sidebar-action-btn:hover {
+  background: var(--bg-input);
+  color: var(--accent);
+}
+
+/* Project row with actions */
+.project-row {
+  display: flex;
+  align-items: center;
+}
+
+.project-row .project-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.project-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.project-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 5px;
+  border-radius: var(--r-sm);
+  line-height: 1;
+  transition: color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.project-action-btn:hover {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+.project-action-btn.delete:hover {
+  color: var(--danger);
+}
+
+/* Conversation row with delete */
+.conv-row {
+  display: flex;
+  align-items: center;
+}
+
+.conv-row .conv-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 3px 5px;
+  border-radius: var(--r-sm);
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease), color 0.14s var(--ease);
+  flex-shrink: 0;
+}
+
+.conv-row:hover .conv-delete-btn {
+  opacity: 1;
+}
+
+.conv-delete-btn:hover {
+  color: var(--danger);
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlay-in 0.14s var(--ease);
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Edit modal */
+.modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 680px;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 14.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: var(--r-sm);
+  transition: color 0.14s var(--ease);
+}
+
+.modal-close:hover {
+  color: var(--text);
+}
+
+.modal-textarea {
+  flex: 1;
+  margin: 16px 20px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  min-height: 400px;
+}
+
+.modal-textarea:focus {
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 16px;
+  justify-content: flex-end;
+}
+
+/* Confirm dialog */
+.confirm-dialog {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  max-width: 440px;
+  width: 90vw;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.confirm-message {
+  font-size: 14px;
+  line-height: 1.55;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.confirm-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.confirm-checkbox input[type='checkbox'] {
+  cursor: pointer;
+  margin: 0;
+  accent-color: var(--accent-strong);
+}
+
+.btn-danger {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  background: var(--danger-strong);
+  color: #fff;
+  transition: background 0.14s var(--ease);
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
+}
+
+/* Global memory + Agents buttons in sidebar — quiet utility rows. */
+.global-memory-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  margin-bottom: 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+  text-align: left;
+}
+
+.global-memory-btn:hover {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+/* Sidebar divider */
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+/* Global Memory modal — SOUL.md "read-only to the agent" tag. */
+.global-memory-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+  margin-right: auto;
+  margin-left: 8px;
+}
+
+/* General section */
+.general-section {
+  margin-bottom: 4px;
+}
+
+/* Global memory modal */
+.global-memory-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 720px;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.global-memory-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.global-memory-file {
+  margin-bottom: 20px;
+}
+
+.global-memory-file:last-child {
+  margin-bottom: 0;
+}
+
+.global-memory-file-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.global-memory-file-header h4 {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin: 0;
+}
+
+.btn-edit-global {
+  padding: 2px 10px;
+  font-size: 11px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+
+.btn-edit-global:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.global-memory-content {
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.global-memory-editor {
+  display: flex;
+  flex-direction: column;
+}
+
+.global-memory-textarea {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  min-height: 150px;
+  box-sizing: border-box;
+}
+
+.global-memory-editor-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Runs section (right column, below context files) */
+/* Runs section spacing — the divider now comes from the .runs-header
+   section label, so no extra border/padding here. */
+.runs-section {
+  margin-top: 0;
+}
+
+.runs-section > summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: revert;
+  transition: background 0.14s var(--ease);
+}
+
+.runs-section > summary:hover {
+  background: var(--bg-elev);
+}
+
+.runs-summary-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runs-running-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--run);
+  background: var(--run-bg);
+  border: 1px solid var(--run-bd);
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+}
+
+.runs-running-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--run);
+  box-shadow: 0 0 0 0 var(--run-glow);
+  animation: runs-pulse 1.4s ease-out infinite;
+}
+
+@keyframes runs-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--run-glow);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
+
+.runs-refresh-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 1px 8px;
+  border-radius: var(--r-sm);
+  line-height: 1.4;
+  transition: color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.runs-refresh-btn:hover {
+  color: var(--text);
+  background: var(--bg-input);
+}
+
+.runs-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 10px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-md);
+  line-height: 1.55;
+}
+
+.runs-empty code {
+  background: var(--bg-input);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.runs-error {
+  font-size: 12px;
+  color: var(--danger);
+  padding: 8px 10px;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-md);
+}
+
+.runs-list {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-row {
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.run-row:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-input);
+}
+
+.run-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.run-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.run-row-meta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Runs-panel row + its Trace affordance share one flex line. */
+.run-row-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.run-row-item .run-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.run-row-trace-btn {
+  flex-shrink: 0;
+  align-self: stretch;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--run);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+
+.run-row-trace-btn:hover {
+  background: var(--run-bg);
+  border-color: var(--run-bd);
+}
+
+/* Status badges — telemetry pills with a currentColor dot. */
+.run-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.run-status::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.run-status.status-completed {
+  color: var(--ok);
+  border-color: var(--ok-bd);
+  background: var(--ok-bg);
+}
+
+.run-status.status-partial {
+  color: var(--warn);
+  border-color: var(--warn-bd);
+  background: var(--warn-bg);
+}
+
+.run-status.status-blocked {
+  color: var(--blocked);
+  border-color: var(--blocked-bd);
+  background: var(--blocked-bg);
+}
+
+.run-status.status-failed {
+  color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+}
+
+.run-status.status-running {
+  color: var(--run);
+  border-color: var(--run-bd);
+  background: var(--run-bg);
+}
+
+.run-status.status-cancelled {
+  color: var(--cancel);
+  border-color: var(--cancel-bd);
+  background: var(--cancel-bg);
+}
+
+.run-status.status-unknown {
+  color: var(--text-muted);
+}
+
+/* Run detail modal */
+.run-detail-modal {
+  width: 760px;
+}
+
+.run-detail-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.run-detail-loading {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+.run-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.run-detail-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.run-detail-label {
+  font-size: 9.5px;
+}
+
+.run-detail-runid {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.run-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.run-detail-grid h4,
+.run-detail-result h4 {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+.run-detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.run-detail-list li {
+  padding: 4px 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  word-break: break-word;
+}
+
+.run-detail-none {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.run-detail-result {
+  display: flex;
+  flex-direction: column;
+}
+
+.run-detail-resultmd {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  max-height: 360px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.run-detail-verification {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.run-verify-status {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.run-verify-status.status-passed {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.run-verify-status.status-failed {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.run-verify-status.status-skipped {
+  background: var(--bg-elev-2);
+  color: var(--text-muted);
+}
+
+/* Phase 5 — task status badges (reuse the verify-status badge shape). */
+.run-verify-status.status-completed {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.run-verify-status.status-running {
+  background: var(--run-bg);
+  color: var(--run);
+}
+
+.run-verify-status.status-pending {
+  background: var(--bg-elev);
+  color: var(--text-muted);
+}
+
+.run-verify-status.status-cancelled {
+  background: var(--cancel-bg);
+  color: var(--cancel);
+}
+
+/* Neutral informational anchor (e.g. "Run started") — not a status outcome. */
+.run-verify-status.status-info {
+  background: var(--run-bg);
+  color: var(--text-muted);
+}
+
+/* AI visual-judgment verdicts. */
+.run-verify-status.status-warning {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.run-verify-status.status-inconclusive {
+  background: var(--bg-elev-2);
+  color: var(--text-muted);
+}
+
+/* Phase 5 — Plan & Tasks block in the run detail modal. */
+.run-detail-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-detail-task-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-detail-task-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.run-detail-task-title {
+  font-weight: 600;
+}
+
+.run-detail-task-summary {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.run-detail-task-blockers {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.run-detail-verify-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 8px;
+}
+
+.run-detail-verify-cmd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.run-detail-verify-cmd code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  background: var(--bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.run-detail-verify-output {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Task 06.2E — per-command verification breakdown. */
+.run-detail-verify-cmd-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-detail-verify-cmd-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.run-detail-verify-cmd-list li code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 6px;
+  background: var(--bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.run-detail-verify-cmd-list li .run-detail-verify-output {
+  flex-basis: 100%;
+  margin-top: 4px;
+}
+
+.run-detail-browser-screenshot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.run-detail-browser-img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  object-fit: contain;
+}
+
+.run-detail-browser-actions {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-browser-verify-btn {
+  align-self: flex-start;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-strong);
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.run-browser-verify-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.run-browser-verify-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.run-detail-screenshot-link {
+  font-size: 12px;
+  color: var(--accent);
+  margin-left: 8px;
+}
+
+.run-detail-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+/* ---------- Task 06.2D — chat-first run follow-up card ---------- */
+
+.run-chat-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.run-chat-card p {
+  margin: 0;
+}
+
+.run-chat-status-line,
+.run-chat-verify-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--run);
+  font-size: 12px;
+}
+
+.run-chat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--run);
+  flex-shrink: 0;
+  animation: run-chat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes run-chat-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+.run-chat-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-chat-files {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.run-chat-files code,
+.run-chat-verify-result code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-elev);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.run-chat-blockers {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--blocked);
+}
+
+.run-chat-muted {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Phase 6 — memory reconciliation line + recovery "next steps" + chat badges */
+.run-chat-memory {
+  margin-top: 4px;
+}
+
+.run-chat-recovery {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--warn-bd);
+  background: var(--warn-bg);
+}
+
+.run-chat-recovery.recovery-exhausted {
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+
+.run-chat-recovery-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.run-chat-recovery-action {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.run-chat-recovery-diagnosis {
+  font-size: 13px;
+  margin: 0;
+}
+
+.run-chat-recovery-btn {
+  align-self: flex-start;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--warn-bd);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.run-chat-recovery-btn:hover:not(:disabled) {
+  background: var(--warn-bg);
+}
+
+.run-chat-recovery-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.chat-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.chat-intent-badge {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* Intent tints — quiet semantic cues per judged intent. */
+.chat-intent-badge.intent-dispatch_suggested {
+  color: var(--run);
+  border-color: var(--run-bd);
+  background: var(--run-bg);
+}
+
+.chat-intent-badge.intent-research {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.chat-intent-badge.intent-memory_only {
+  color: var(--cancel);
+  border-color: var(--cancel-bd);
+  background: var(--cancel-bg);
+}
+
+.chat-memory-chip {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+}
+
+.chat-memory-chip-btn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.chat-memory-chip-btn:hover {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+
+.chat-memory-audit {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+}
+
+.chat-memory-audit-sec {
+  color: var(--text-muted);
+}
+
+.pending-recovery-budget {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.pending-recovery-budget select {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.run-chat-recovery-lineage {
+  margin-top: 4px;
+}
+
+.run-chat-verify-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+
+.run-chat-verify-result.passed {
+  border-color: var(--ok-bd);
+  background: var(--ok-bg);
+}
+
+.run-chat-verify-result.failed {
+  border-color: var(--blocked-bd);
+  background: var(--blocked-bg);
+}
+
+.run-chat-preview-url a {
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.run-chat-screenshot-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+  align-self: flex-start;
+}
+
+.run-chat-screenshot-thumb {
+  max-width: 240px;
+  max-height: 160px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  object-fit: contain;
+}
+
+.run-chat-verify-output {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px 10px;
+  background: var(--bg);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  max-height: 180px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.run-chat-error {
+  font-size: 12px;
+  color: var(--danger);
+}
+
+.run-chat-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.run-chat-verify-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-strong);
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.run-chat-verify-btn:hover {
+  background: var(--accent-hover);
+}
+
+.run-chat-details-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: color 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+
+.run-chat-details-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+/* Live Trace entry button (chat card + detail modal). */
+.run-chat-trace-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--run);
+  background: transparent;
+  border: 1px solid var(--run-bd);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.run-chat-trace-btn:hover {
+  background: var(--run-bg);
+}
+
+/* Run control — cancel / retry buttons + live phase badge + task checklist. */
+.run-chat-cancel-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.run-chat-cancel-btn:hover:not(:disabled) {
+  background: var(--danger-strong);
+  border-color: var(--danger-strong);
+  color: #fff;
+}
+
+.run-chat-cancel-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.run-chat-retry-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.run-chat-retry-btn:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #fff;
+}
+
+.run-chat-retry-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.run-chat-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font-size: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.run-chat-phase-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.run-chat-phase {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--run);
+  padding: 2px 7px;
+  border: 1px solid var(--run-bd);
+  border-radius: 4px;
+  background: var(--run-bg);
+}
+
+.run-chat-phase.phase-cancelling {
+  color: var(--cancel);
+  border-color: var(--cancel-bd);
+  background: var(--cancel-bg);
+}
+
+.run-chat-tasklist {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.run-chat-task {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.run-chat-task-title {
+  color: var(--text);
+}
+
+/* Phase 9 — team execution: integrating phase, wave headers, role chips. */
+.run-chat-phase.phase-integrating {
+  color: var(--warn);
+  border-color: var(--warn-bd);
+  background: var(--warn-bg);
+}
+
+.run-chat-wave-header {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.run-chat-task-role,
+.run-detail-task-role {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--run-bd);
+  color: var(--run);
+  background: var(--run-bg);
+  white-space: nowrap;
+}
+
+.run-chat-task-role.role-reviewer,
+.run-detail-task-role.role-reviewer {
+  color: var(--warn);
+  border-color: var(--warn-bd);
+  background: var(--warn-bg);
+}
+
+.run-chat-task-role.role-inspector,
+.run-detail-task-role.role-inspector {
+  color: var(--ok);
+  border-color: var(--ok-bd);
+  background: var(--ok-bg);
+}
+
+.run-chat-task-ws {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.run-trace-task-chip {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--run);
+  border: 1px solid var(--run-bd);
+  border-radius: 4px;
+  padding: 0 4px;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.run-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* Run timeline (events.jsonl) — used in the run detail modal. */
+.run-timeline {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0 0 0 10px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.run-timeline-event {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.run-timeline-label {
+  color: var(--text);
+}
+
+.run-timeline-detail {
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-timeline-time {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ---------- Live Trace modal ---------- */
+.run-trace-modal {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  width: min(720px, 92vw);
+}
+
+.run-trace-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.run-trace-metric {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-trace-tasks {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.run-trace-tasks-bar {
+  display: inline-block;
+  width: 80px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.run-trace-tasks-fill {
+  display: block;
+  height: 100%;
+  background: var(--run);
+  transition: width 0.3s ease;
+}
+
+.run-trace-body {
+  overflow-y: auto;
+  padding: 10px 16px 16px;
+  flex: 1;
+}
+
+.run-trace-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.run-trace-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.run-trace-time {
+  flex-shrink: 0;
+  width: 58px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.run-trace-row .run-verify-status {
+  flex-shrink: 0;
+  min-width: 56px;
+  text-align: center;
+  margin-right: 0;
+}
+
+.run-trace-main {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.run-trace-label {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.run-trace-target {
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-trace-output {
+  color: var(--text-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.run-trace-phase {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* Lightbox stays dark in both themes — it frames screenshots. */
+.run-chat-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: zoom-out;
+  padding: 24px;
+}
+
+.run-chat-lightbox img {
+  max-width: 95%;
+  max-height: 95%;
+  border-radius: var(--r-sm);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.run-chat-lightbox-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: default;
+  max-width: 95%;
+  max-height: 95%;
+}
+
+.run-chat-lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.run-chat-lightbox-bar button {
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.run-chat-lightbox-bar button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* --- multi-page screenshot gallery (chat run card) --- */
+.run-chat-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.run-chat-shot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: zoom-in;
+}
+
+.run-chat-shot-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- AI visual judgment block (chat run card) --- */
+.run-chat-visual {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.run-chat-visual.visual-passed {
+  border-left: 3px solid var(--ok);
+}
+.run-chat-visual.visual-warning {
+  border-left: 3px solid var(--warn);
+}
+.run-chat-visual.visual-failed {
+  border-left: 3px solid var(--danger);
+}
+.run-chat-visual.visual-inconclusive {
+  border-left: 3px solid var(--text-muted);
+}
+
+.run-chat-visual-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.run-chat-visual-headline {
+  margin: 2px 0;
+  font-weight: 600;
+}
+
+.run-chat-visual-reason {
+  margin: 2px 0;
+  font-size: 13px;
+}
+
+.run-chat-visual-evidence {
+  margin: 4px 0 2px;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.run-chat-visual-by {
+  margin-top: 4px;
+}
+
+/* Phase 11 — declared browser-verification flows on the run card. */
+.run-chat-flows {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.run-chat-integration {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* --- run detail modal: screenshot list + visual review --- */
+.run-detail-shotlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.run-detail-shotlist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-detail-visual-headline {
+  margin: 6px 0 2px;
+  font-weight: 600;
+}
+
+.run-detail-visual-reason {
+  margin: 2px 0;
+  font-size: 13px;
+}
+
+.run-detail-visual-evidence {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ---------- Task 06.2D — Runs panel preview control ---------- */
+
+.preview-control {
+  margin: 8px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.preview-running-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ok);
+}
+
+.preview-start-btn,
+.preview-stop-btn {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  border: none;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease),
+    border-color 0.14s var(--ease);
+}
+
+.preview-start-btn {
+  color: #fff;
+  background: var(--accent-strong);
+}
+
+.preview-start-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.preview-start-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.preview-stop-btn {
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.preview-stop-btn:hover:not(:disabled) {
+  border-color: var(--danger-border);
+  color: var(--danger);
+}
+
+.preview-url-link {
+  font-size: 11px;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.preview-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ===================== Phase 7 — Project Ops (Git / GitHub) ===================== */
+
+.gitops-panel {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-elev);
+}
+.gitops-panel.gitops-compact {
+  margin-top: 8px;
+  padding: 8px;
+}
+.gitops-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.gitops-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.gitops-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.gitops-stat {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.gitops-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.gitops-prlink {
+  font-size: 11px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.gitops-prlink:hover {
+  text-decoration: underline;
+}
+.gitops-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gitops-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), color 0.14s var(--ease);
+}
+.gitops-btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  color: var(--text-strong);
+}
+.gitops-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.gitops-btn.gitops-danger {
+  color: var(--danger);
+}
+.gitops-btn.gitops-danger:hover:not(:disabled) {
+  border-color: var(--danger-border);
+}
+.gitops-diff {
+  margin-top: 8px;
+  max-height: 320px;
+  overflow: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px;
+}
+.gitops-contract {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-strong);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+}
+.gitops-contract.destructive {
+  border-left-color: var(--warn);
+}
+.gitops-contract-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.gitops-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+}
+.gitops-tag.external {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.gitops-tag.danger {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.gitops-label {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 6px 0 3px;
+}
+.gitops-message {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  color: var(--text);
+}
+.gitops-message:focus {
+  outline: none;
+  border-color: var(--accent-border);
+}
+.gitops-prtitle {
+  font-weight: 600;
+  font-size: 13px;
+}
+.gitops-refused {
+  color: var(--warn);
+}
+.gitops-contract-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.gitops-confirm {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--accent-strong);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.14s var(--ease);
+}
+.gitops-confirm:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.gitops-confirm.gitops-danger {
+  background: var(--warn-fill);
+  color: var(--warn-fill-text);
+}
+.gitops-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.gitops-cancel {
+  font-size: 12px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease);
+}
+.gitops-cancel:hover {
+  border-color: var(--border-strong);
+}
+
+/* project-level git strip in the Runs panel */
+.git-control {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.git-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.git-branch-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+}
+.git-dirty {
+  color: var(--warn);
+}
+.git-clean {
+  color: var(--text-muted);
+}
+.git-connect-btn {
+  font-size: 11px;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-surface);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), color 0.14s var(--ease);
+}
+.git-connect-btn:hover {
+  border-color: var(--border-strong);
+}
+.git-connect-btn.connected {
+  border-color: var(--ok-bd);
+  color: var(--ok);
+}
+
+/* connector modal */
+.connector-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  width: min(460px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+.connector-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.connector-modal h3 {
+  font-size: 14.5px;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+.connector-input,
+.connector-select {
+  width: 100%;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-input);
+  color: var(--text);
+}
+.connector-input:focus,
+.connector-select:focus {
+  outline: none;
+  border-color: var(--accent-border);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Phase 8 — app-env registry panel */
+.env-registry { margin: 8px 0; }
+.env-registry > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.env-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.env-add .connector-input { flex: 1 1 120px; min-width: 0; }
+
+/* Git panel + external-links panel (mirror the env-registry panel style) */
+.git-panel,
+.links-panel { margin: 8px 0; }
+.git-panel > summary,
+.links-panel > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.env-registry > summary,
+.git-panel > summary,
+.links-panel > summary {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  transition: background 0.14s var(--ease);
+}
+.env-registry > summary:hover,
+.git-panel > summary:hover,
+.links-panel > summary:hover {
+  background: var(--bg-elev);
+}
+.git-panel-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+.git-conn-badge { font-size: 12px; color: var(--text-muted); }
+.git-conn-badge.connected { color: var(--ok); }
+.connector-env-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  padding: 5px 8px;
+  margin: 4px 0;
+}
+.external-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 12px;
+  word-break: break-all;
+}
+.external-link:hover { text-decoration: underline; }
+.links-list { list-style: none; margin: 4px 0 0; padding: 0; }
+.links-item { padding: 3px 0; }
+
+/* =====================================================================
+   Phase 10 — Agents browser, composer @-command menu, research chips
+   ===================================================================== */
+
+/* Agents button in sidebar (sits above the global-memory button) */
+.agents-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  margin-bottom: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+  text-align: left;
+}
+
+.agents-btn:hover {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
+/* Agents browser modal — two-pane (list | detail) */
+.agents-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 880px;
+  max-width: 94vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.agents-modal-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.agents-list {
+  width: 250px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+.agents-list-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 7px 10px;
+  margin-bottom: 2px;
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.14s var(--ease);
+}
+
+.agents-list-item:hover {
+  background: var(--bg-input);
+}
+
+.agents-list-item.active {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+.agents-list-item.planned {
+  opacity: 0.55;
+}
+
+.agents-list-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-command-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+.agent-planned-tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.agent-detail {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  min-width: 0;
+}
+
+.agent-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.agent-detail-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+
+.agent-badges {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.agent-badge {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 1px 8px;
+}
+
+.agent-badge.badge-web,
+.agent-badge.badge-deploy,
+.agent-badge.badge-asks-first {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.agent-introduction {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 0 0 12px;
+}
+
+.agent-section {
+  margin-bottom: 12px;
+}
+
+.agent-section h5 {
+  margin: 0 0 4px;
+  font-size: 10.5px;
+}
+
+.agent-section ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.agent-section p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.agent-boundary {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+}
+
+.agent-skills {
+  list-style: none;
+  margin: 0;
+  padding: 0 !important;
+}
+
+.skill-item {
+  margin-bottom: 6px;
+}
+
+.skill-toggle {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease);
+}
+
+.skill-toggle:hover,
+.skill-toggle.open {
+  border-color: var(--accent-border);
+}
+
+.skill-title {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.skill-description {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.skill-view {
+  margin-top: 6px;
+}
+
+/* Edit sits top-right over the skill body (not below it). */
+.skill-read {
+  position: relative;
+}
+
+.skill-edit-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+}
+
+.skill-content {
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 8px;
+  padding-right: 56px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+}
+
+.skill-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-textarea {
+  width: 100%;
+  padding: 8px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  min-height: 180px;
+  box-sizing: border-box;
+}
+
+.agent-detail-error {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--danger);
+}
+
+/* Composer @-command autocomplete (opens upward above the composer) */
+.chat-input.composer {
+  position: relative;
+}
+
+.command-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 30;
+  width: min(480px, 100%);
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+/* Scoped under `.chat-input.composer` so these beat the generic
+   `.chat-input button` Send-button rule (accent background + white text) —
+   the same specificity trick as `.composer-icon-btn`. Without it every menu
+   option renders as a solid accent block with unreadable text. */
+.chat-input.composer .command-menu-option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chat-input.composer .command-menu-option:hover,
+.chat-input.composer .command-menu-option.selected {
+  background: var(--accent-soft);
+}
+
+.command-menu-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.command-menu-command {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.command-menu-name {
+  font-size: 12px;
+  color: var(--text-strong);
+}
+
+.command-menu-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.command-badge {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 0 6px;
+}
+
+.command-badge.badge-web,
+.command-badge.badge-asks-first {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+
+/* Research sources chip + expandable source list on assistant messages */
+.chat-sources-chip {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border: none;
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.chat-sources-chip:hover {
+  background: var(--bg-elev-2);
+  color: var(--text);
+}
+
+.chat-sources-list {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-elev);
+  border-radius: var(--r-sm);
+}
+
+.chat-source-row {
+  padding: 2px 0;
+  word-break: break-all;
+}
+
+.chat-source-row.failed {
+  opacity: 0.6;
+}
+
+.chat-source-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.chat-source-link:hover {
+  text-decoration: underline;
+}
+
+.chat-source-flag {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+/* "Run @search" suggestion chip on research-intent replies */
+.research-suggest-chip {
+  font-size: 11px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-pill);
+  padding: 2px 9px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.research-suggest-chip:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #fff;
+}
+
+/* Phase 10.2 — suggested skill patch action row (Run Detail modal) */
+.skill-patch-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* =====================================================================
+   UI polish pass — Settings modal (model/provider + theme)
+   ===================================================================== */
+
+/* The dialog container takes programmatic focus (focus trap anchor) — no
+   ring on the container itself, only on its controls. */
+.settings-modal:focus {
+  outline: none;
+}
+
+.settings-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: 460px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.settings-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 20px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-section-title {
+  font-size: 10px;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.settings-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.14s var(--ease), box-shadow 0.14s var(--ease);
+}
+
+.settings-select:hover,
+.settings-select:focus {
+  border-color: var(--accent-border);
+}
+
+.settings-select:focus {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.settings-select option:disabled {
+  color: var(--text-muted);
+}
+
+.settings-theme-toggle {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.settings-theme-option {
+  padding: 5px 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: background 0.14s var(--ease), color 0.14s var(--ease);
+}
+
+.settings-theme-option:hover {
+  color: var(--text);
+}
+
+.settings-theme-option.active {
+  background: var(--bg-surface);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-1);
+}
+
+.settings-hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* =====================================================================
+   Public UI pass — landing state (the new-conversation experience)
+   ===================================================================== */
+
+.landing {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.landing-inner {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: max(48px, 13vh);
+  padding-bottom: 48px;
+}
+
+.landing-idle .landing-inner {
+  margin-top: max(64px, 24vh);
+}
+
+.landing-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.landing-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  margin-bottom: 6px;
+}
+
+.landing-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.landing-greeting {
+  font-size: 27px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-strong);
+}
+
+.landing-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.landing-sub strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* The shared composer, re-dressed as a centered card. Overflow stays visible
+   so the upward-opening @-command and model menus aren't clipped. */
+.landing-composer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+  overflow: visible;
+}
+
+.landing-composer .chat-input {
+  border-top: none;
+  background: transparent;
+  border-radius: var(--r-lg);
+  padding: 12px;
+}
+
+.landing-composer .composer-tray {
+  background: transparent;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+/* On the landing the composer sits mid-panel inside `.landing` (a scroll
+   container), so the thread composer's upward-opening @-command and model
+   menus would be clipped at the top with no way to scroll to them. Flip them
+   to open DOWNWARD here — there's ample room below, and downward overflow is
+   reachable within the scroll container. Higher specificity than the base
+   `.command-menu` / `.model-picker-menu` upward rules. */
+.landing .command-menu,
+.landing .model-picker-menu {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+
+.landing-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.landing-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease),
+    color 0.14s var(--ease);
+}
+
+.landing-chip:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+}
+
+.landing-chip:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+}
+
+.landing-runs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.landing-runs-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  padding: 0 2px;
+}
+
+.landing-runs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.landing-run-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.landing-run-row:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elev);
+}
+
+.landing-run-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.landing-run-time {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* =====================================================================
+   Public UI pass — right-panel section labels + Integrations cards
+   ===================================================================== */
+
+/* Section labels double as separators: a rule above each marks where one
+   section ends and the next begins (Project memory / Integrations / Workspace
+   / Runs). */
+.context-section-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+  margin: 16px 0 8px;
+  padding: 14px 2px 0;
+  border-top: 1px solid var(--border);
+}
+
+.integrations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Each card is a single button that opens the provider's own central modal. */
+.integration-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s var(--ease), background 0.14s var(--ease);
+}
+
+.integration-card:hover {
+  background: var(--bg-elev);
+  border-color: var(--border-strong);
+}
+
+.integration-card:focus-visible {
+  outline: 2px solid var(--accent-border);
+  outline-offset: 1px;
+}
+
+.integration-open-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.integration-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-strong);
+  flex-shrink: 0;
+}
+
+/* Brand tints for the marks whose identity is their color; GitHub/Vercel
+   stay ink-colored. Light theme deepens both for contrast on white. */
+.integration-mark.supabase {
+  color: #3ecf8e;
+}
+
+.integration-mark.stripe {
+  color: #635bff;
+}
+
+:root[data-theme='light'] .integration-mark.supabase {
+  color: #1c8656;
+}
+
+:root[data-theme='light'] .integration-mark.stripe {
+  color: #5851e0;
+}
+
+.integration-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.integration-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--warn);
+  border: 1px solid var(--warn-bd);
+  background: var(--warn-bg);
+  border-radius: var(--r-pill);
+  padding: 0 5px;
+}
+
+.integration-status {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.integration-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.integration-status.tone-ok {
+  color: var(--ok);
+}
+
+.integration-status.tone-warn {
+  color: var(--warn);
+}
+
+.integration-status.tone-danger {
+  color: var(--danger);
+}
+
+.integration-status.tone-muted {
+  color: var(--text-muted);
+}
+
+/* Runs is now a plain section (no fold): the section label carries the running
+   indicator + refresh control on the right. */
+.runs-section {
+  display: block;
+}
+
+.context-section-label.runs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.context-section-label.runs-header .runs-summary-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* GitHub connector modal */
+.github-modal {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  width: min(560px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: modal-in 0.16s var(--ease);
+}
+
+.github-modal-body {
+  padding: 14px 18px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.git-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.git-history {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.git-history-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.git-history-toggle:hover {
+  color: var(--text-strong);
+}
+
+.git-history-body {
+  margin-top: 8px;
+}
+
+.git-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.git-commit-row {
+  display: flex;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  align-items: baseline;
+}
+
+.git-commit-row:hover {
+  background: var(--bg-elev);
+}
+
+.git-commit-hash {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.git-commit-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.git-commit-subject {
+  font-size: 12.5px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-commit-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
